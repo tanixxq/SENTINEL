@@ -3,6 +3,8 @@ import { checkMonitor } from "../Services/MonitorChecker.js";
 import MonitorCheck from "../Models/MonitorCheck.js";
 import Incident from "../Models/Incident.js";
 
+
+
 export const createMonitor = async (req, res) => {
     try {
         const { url, name } = req.body;
@@ -82,6 +84,8 @@ export const checkMonitorStatus = async (req, res) => {
         });
     }
 };
+
+
 
 export const getMonitorHistory = async (req, res) => {
     try {
