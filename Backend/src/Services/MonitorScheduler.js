@@ -1,6 +1,7 @@
 import Monitor from "../Models/Monitor.js";
 import MonitorCheck from "../Models/MonitorCheck.js";
 import { checkMonitor } from "./MonitorChecker.js";
+import Incident from "../Models/Incident.js";
 
 const runMonitorChecks = async () => {
     try {
@@ -16,6 +17,46 @@ const runMonitorChecks = async () => {
                 statusCode: result.statusCode,
                 responseTime: result.responseTime
             })
+
+            if (result.status === "DOWN") {
+                const ongoingIncident = await Incident.findOne({
+                    monitor: monitor._id,
+                    status: "ONGOING"
+                });
+            
+                if (!ongoingIncident) {
+                    await Incident.create({
+                        monitor: monitor._id,
+                        status: "ONGOING",
+                        startedAt: new Date()
+                    });
+            
+                    console.log(
+                        `[SENTINEL] INCIDENT STARTED → ${monitor.name || monitor.url}`
+                    );
+                }
+            } else if (result.status === "UP") {
+                const ongoingIncident = await Incident.findOne({
+                    monitor: monitor._id,
+                    status: "ONGOING"
+                });
+            
+                if (ongoingIncident) {
+                    const resolvedAt = new Date();
+            
+                    ongoingIncident.status = "RESOLVED";
+                    ongoingIncident.resolvedAt = resolvedAt;
+            
+                    ongoingIncident.duration =
+                        resolvedAt.getTime() - ongoingIncident.startedAt.getTime();
+            
+                    await ongoingIncident.save();
+            
+                    console.log(
+                        `[SENTINEL] INCIDENT RESOLVED → ${monitor.name || monitor.url} (${ongoingIncident.duration}ms)`
+                    );
+                }
+            }
 
             monitor.status = result.status;
             monitor.responseTime = result.responseTime;
