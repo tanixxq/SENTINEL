@@ -5,7 +5,8 @@ import {
     getMonitor,
     checkMonitorStatus,
     getMonitorHistory,
-    getMonitorMetrics
+    getMonitorMetrics,
+    getMonitorIncidents
 } from "../Controllers/MonitorController.js";
 
 
@@ -15,6 +16,7 @@ router.post("/", createMonitor);
 router.get("/", getMonitors);
 router.get("/:id/history", getMonitorHistory);
 router.get("/:id/metrics", getMonitorMetrics);
+router.get("/:id/incidents", getMonitorIncidents);
 router.get("/:id", getMonitor);
 router.get("/:id/check", checkMonitorStatus);
 export default router;
