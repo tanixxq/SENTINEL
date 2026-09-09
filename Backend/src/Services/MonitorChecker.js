@@ -1,28 +1,42 @@
 import axios from "axios";
 
 export const checkMonitor = async (url) => {
-    const startTime = Date.now();
+    const maxAttempts = 3;
 
-    try {
-        const response = await axios.get(url, {
-            timeout: 10000
-        });
+    let lastError = null;
+    let totalResponseTime = 0;
 
-        const responseTime = Date.now() - startTime;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        const startTime = Date.now();
 
-        return {
-            status: "UP",
-            statusCode: response.status,
-            responseTime
-        };
+        try {
+            const response = await axios.get(url, {
+                timeout: 10000
+            });
 
-    } catch (error) {
-        const responseTime = Date.now() - startTime;
+            const responseTime = Date.now() - startTime;
 
-        return {
-            status: "DOWN",
-            statusCode: error.response?.status || null,
-            responseTime
-        };
+            return {
+                status: "UP",
+                statusCode: response.status,
+                responseTime
+            };
+
+        } catch (error) {
+            const responseTime = Date.now() - startTime;
+
+            totalResponseTime += responseTime;
+            lastError = error;
+
+            console.log(
+                `[SENTINEL] Check attempt ${attempt}/${maxAttempts} failed`
+            );
+        }
     }
+
+    return {
+        status: "DOWN",
+        statusCode: lastError?.response?.status || null,
+        responseTime: totalResponseTime
+    };
 };
