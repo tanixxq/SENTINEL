@@ -104,3 +104,57 @@ export const getMonitorHistory = async (req, res) => {
         });
     }
 };
+
+export const getMonitorMetrics = async (req, res) => {
+    try {
+        const monitor = await Monitor.findById(req.params.id);
+
+        if (!monitor) {
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+        }
+
+        const checks = await MonitorCheck.find({
+            monitor: monitor._id
+        });
+
+        const totalChecks = checks.length;
+
+        const successfulChecks = checks.filter(
+            (check) => check.status === "UP"
+        ).length;
+
+        const failedChecks = checks.filter(
+            (check) => check.status === "DOWN"
+        ).length;
+
+        const uptime = totalChecks === 0
+            ? 0
+            : (successfulChecks / totalChecks) * 100;
+
+        const responseTimes = checks
+            .filter((check) => check.responseTime !== null)
+            .map((check) => check.responseTime);
+
+        const averageResponseTime = responseTimes.length === 0
+            ? 0
+            : responseTimes.reduce(
+                (sum, time) => sum + time,
+                0
+            ) / responseTimes.length;
+
+        res.json({
+            totalChecks,
+            successfulChecks,
+            failedChecks,
+            uptime: Number(uptime.toFixed(2)),
+            averageResponseTime: Math.round(averageResponseTime)
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to calculate monitor metrics"
+        });
+    }
+};
