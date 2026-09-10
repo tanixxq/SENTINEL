@@ -7,7 +7,8 @@ import {
     checkMonitorStatus,
     getMonitorHistory,
     getMonitorMetrics,
-    getMonitorIncidents
+    getMonitorIncidents,
+    getMonitorDashboard
 } from "../Controllers/MonitorController.js";
 
 const router = express.Router();
@@ -23,6 +24,8 @@ router.get("/:id/history", getMonitorHistory);
 router.get("/:id/metrics", getMonitorMetrics);
 
 router.get("/:id/incidents", getMonitorIncidents);
+
+router.get("/:id/dashboard", getMonitorDashboard);
 
 router.get("/:id", getMonitor);
 
