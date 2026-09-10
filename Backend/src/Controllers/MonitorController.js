@@ -186,3 +186,120 @@ export const getMonitorIncidents = async (req, res) => {
         });
     }
 };
+
+export const getMonitorDashboard = async (req, res) => {
+
+    try {
+
+        const monitor = await Monitor.findById(req.params.id);
+
+
+        if (!monitor) {
+
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+
+        }
+
+
+        const checks = await MonitorCheck.find({
+            monitor: monitor._id
+        })
+        .sort({ checkedAt: -1 })
+        .limit(10);
+
+
+
+        const totalChecks = await MonitorCheck.countDocuments({
+            monitor: monitor._id
+        });
+
+
+
+        const successfulChecks = await MonitorCheck.countDocuments({
+            monitor: monitor._id,
+            status: "UP"
+        });
+
+
+
+        const averageResponse = checks.length === 0
+            ? 0
+            : checks.reduce(
+                (sum, check) => sum + (check.responseTime || 0),
+                0
+            ) / checks.length;
+
+
+
+        const incidents = await Incident.find({
+            monitor: monitor._id
+        });
+
+
+
+        const activeIncidents = incidents.filter(
+            incident => incident.status === "ONGOING"
+        ).length;
+
+
+
+        res.json({
+
+            monitor: {
+                name: monitor.name,
+                url: monitor.url,
+                status: monitor.status,
+                responseTime: monitor.responseTime,
+                lastCheckedAt: monitor.lastCheckedAt
+            },
+
+
+            metrics: {
+
+                totalChecks,
+
+                uptime:
+                    totalChecks === 0
+                    ? 0
+                    : Number(
+                        ((successfulChecks / totalChecks) * 100)
+                        .toFixed(2)
+                    ),
+
+                averageResponseTime:
+                    Math.round(averageResponse)
+
+            },
+
+
+            recentChecks: checks.map(check => ({
+                status: check.status,
+                responseTime: check.responseTime,
+                checkedAt: check.checkedAt
+            })),
+
+
+            incidents: {
+
+                total: incidents.length,
+
+                active: activeIncidents
+
+            }
+
+        });
+
+
+    } catch(error) {
+
+        res.status(500).json({
+
+            message: "Failed to load dashboard"
+
+        });
+
+    }
+
+};
