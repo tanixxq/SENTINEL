@@ -1,18 +1,27 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 import app from "./src/App.js";
 import connectDB from "./src/config/db.js";
 import startMonitorScheduler from "./src/Services/MonitorScheduler.js";
 
-const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
+
     await connectDB();
 
-    app.listen(PORT, () => {
-        console.log(`SENTINEL server running on port ${PORT}`);
+    app.listen(8000, () => {
+
+        console.log(
+            "SENTINEL server running on port 8000"
+        );
+
     });
+
+    startMonitorScheduler();
+
 };
 
-startMonitorScheduler();
 
 startServer();
