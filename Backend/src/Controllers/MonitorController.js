@@ -10,35 +10,41 @@ export const createMonitor = async (req, res) => {
         const { url, name } = req.body;
 
         const monitor = await Monitor.create({
+            user: req.user.id,
             url,
             name
         });
 
         res.status(201).json(monitor);
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to create monitor"
+            message: "Failed to create monitor",
+            error: error.message
         });
     }
 };
 
 export const getMonitors = async (req, res) => {
     try {
-        const monitors = await Monitor.find();
+        const monitors = await Monitor.find({
+            user: req.user.id
+        });
 
         res.json(monitors);
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to fetch monitors"
+            message: "Failed to fetch monitors",
+            error: error.message
         });
     }
 };
 
 export const getMonitor = async (req, res) => {
     try {
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!monitor) {
             return res.status(404).json({
@@ -47,10 +53,10 @@ export const getMonitor = async (req, res) => {
         }
 
         res.json(monitor);
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to fetch monitor"
+            message: "Failed to fetch monitor",
+            error: error.message
         });
     }
 };
@@ -89,7 +95,10 @@ export const checkMonitorStatus = async (req, res) => {
 
 export const getMonitorHistory = async (req, res) => {
     try {
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!monitor) {
             return res.status(404).json({
@@ -98,21 +107,24 @@ export const getMonitorHistory = async (req, res) => {
         }
 
         const history = await MonitorCheck.find({
-            monitor: monitor._id
+            monitor: req.params.id
         }).sort({ checkedAt: -1 });
 
         res.json(history);
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to fetch monitor history"
+            message: "Failed to fetch monitor history",
+            error: error.message
         });
     }
 };
 
 export const getMonitorMetrics = async (req, res) => {
     try {
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!monitor) {
             return res.status(404).json({
@@ -121,52 +133,59 @@ export const getMonitorMetrics = async (req, res) => {
         }
 
         const checks = await MonitorCheck.find({
-            monitor: monitor._id
+            monitor: req.params.id
         });
 
-        const totalChecks = checks.length;
+        if (checks.length === 0) {
+            return res.json({
+                uptime: 0,
+                averageResponseTime: 0,
+                totalChecks: 0,
+                successfulChecks: 0,
+                failedChecks: 0
+            });
+        }
 
         const successfulChecks = checks.filter(
-            (check) => check.status === "UP"
+            check => check.status === "UP"
         ).length;
 
         const failedChecks = checks.filter(
-            (check) => check.status === "DOWN"
+            check => check.status === "DOWN"
         ).length;
 
-        const uptime = totalChecks === 0
-            ? 0
-            : (successfulChecks / totalChecks) * 100;
+        const totalResponseTime = checks.reduce(
+            (sum, check) => sum + (check.responseTime || 0),
+            0
+        );
 
-        const responseTimes = checks
-            .filter((check) => check.responseTime !== null)
-            .map((check) => check.responseTime);
+        const averageResponseTime =
+            totalResponseTime / checks.length;
 
-        const averageResponseTime = responseTimes.length === 0
-            ? 0
-            : responseTimes.reduce(
-                (sum, time) => sum + time,
-                0
-            ) / responseTimes.length;
+        const uptime =
+            (successfulChecks / checks.length) * 100;
 
         res.json({
-            totalChecks,
+            uptime,
+            averageResponseTime,
+            totalChecks: checks.length,
             successfulChecks,
-            failedChecks,
-            uptime: Number(uptime.toFixed(2)),
-            averageResponseTime: Math.round(averageResponseTime)
+            failedChecks
         });
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to calculate monitor metrics"
+            message: "Failed to fetch monitor metrics",
+            error: error.message
         });
     }
 };
 
 export const getMonitorIncidents = async (req, res) => {
     try {
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!monitor) {
             return res.status(404).json({
@@ -175,14 +194,14 @@ export const getMonitorIncidents = async (req, res) => {
         }
 
         const incidents = await Incident.find({
-            monitor: monitor._id
+            monitor: req.params.id
         }).sort({ startedAt: -1 });
 
         res.json(incidents);
-
     } catch (error) {
         res.status(500).json({
-            message: "Failed to fetch incidents"
+            message: "Failed to fetch monitor incidents",
+            error: error.message
         });
     }
 };

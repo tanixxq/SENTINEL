@@ -10,23 +10,24 @@ import {
     getMonitorIncidents,
     getMonitorDashboard
 } from "../Controllers/MonitorController.js";
+import authMiddleware from "../Middleware/AuthMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", createMonitor);
+router.post("/",authMiddleware, createMonitor);
 
-router.get("/", getMonitors);
+router.get("/",authMiddleware, getMonitors);
 
 router.get("/:id/check", checkMonitorStatus);
 
-router.get("/:id/history", getMonitorHistory);
+router.get("/:id/history",authMiddleware, getMonitorHistory);
 
-router.get("/:id/metrics", getMonitorMetrics);
+router.get("/:id/metrics",authMiddleware, getMonitorMetrics);
 
-router.get("/:id/incidents", getMonitorIncidents);
+router.get("/:id/incidents",authMiddleware, getMonitorIncidents);
 
-router.get("/:id/dashboard", getMonitorDashboard);
+router.get("/:id/dashboard",authMiddleware, getMonitorDashboard);
 
-router.get("/:id", getMonitor);
+router.get("/:id",authMiddleware, getMonitor);
 
 export default router;
