@@ -1,20 +1,21 @@
-
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
     Activity,
     AlertTriangle,
     ChevronRight,
     LayoutDashboard,
+    LogOut,
     Plus,
     Server,
     Settings,
     ShieldCheck
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const navItems = [
     {
         name: "Overview",
-        path: "/",
+        path: "/dashboard",
         icon: LayoutDashboard
     },
     {
@@ -30,7 +31,7 @@ const navItems = [
 ];
 
 const pageNames = {
-    "/": "Overview",
+    "/dashboard": "Overview",
     "/monitors": "Monitors",
     "/incidents": "Incidents",
     "/settings": "Settings"
@@ -38,7 +39,15 @@ const pageNames = {
 
 function Layout() {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+
     const pageName = pageNames[location.pathname] || "Overview";
+
+    const handleLogout = () => {
+        logout();
+        navigate("/login", { replace: true });
+    };
 
     return (
         <div className="min-h-screen bg-[#070809] text-zinc-100">
@@ -53,6 +62,7 @@ function Layout() {
                                 strokeWidth={2}
                                 className="text-zinc-100"
                             />
+
                             <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                         </div>
 
@@ -60,6 +70,7 @@ function Layout() {
                             <p className="text-[13px] font-semibold tracking-[0.2em] text-zinc-100">
                                 SENTINEL
                             </p>
+
                             <p className="mt-0.5 text-[9px] uppercase tracking-[0.18em] text-zinc-600">
                                 Reliability
                             </p>
@@ -139,6 +150,7 @@ function Layout() {
                                 <p className="text-xs font-medium text-zinc-300">
                                     Add monitor
                                 </p>
+
                                 <p className="mt-0.5 text-[10px] text-zinc-600">
                                     Start monitoring a URL
                                 </p>
@@ -161,7 +173,11 @@ function Layout() {
                             }`
                         }
                     >
-                        <Settings size={16} strokeWidth={1.8} />
+                        <Settings
+                            size={16}
+                            strokeWidth={1.8}
+                        />
+
                         Settings
                     </NavLink>
 
@@ -175,6 +191,7 @@ function Layout() {
                                 <p className="truncate text-xs font-medium text-zinc-300">
                                     Sentinel User
                                 </p>
+
                                 <p className="mt-0.5 truncate text-[10px] text-zinc-600">
                                     Personal workspace
                                 </p>
@@ -182,6 +199,20 @@ function Layout() {
 
                             <div className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-400" />
                         </div>
+
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="group mt-2 flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-[12px] text-zinc-600 transition hover:bg-red-400/[0.05] hover:text-red-400/80"
+                        >
+                            <LogOut
+                                size={15}
+                                strokeWidth={1.8}
+                                className="transition group-hover:text-red-400/80"
+                            />
+
+                            <span>Log out</span>
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -207,6 +238,7 @@ function Layout() {
                         <div className="hidden items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-400/[0.045] px-3 py-1.5 sm:flex">
                             <span className="relative flex h-1.5 w-1.5">
                                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50" />
+
                                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
                             </span>
 
@@ -219,6 +251,7 @@ function Layout() {
 
                         <div className="flex items-center gap-2 text-zinc-600">
                             <ShieldCheck size={15} />
+
                             <span className="text-[10px] uppercase tracking-[0.12em]">
                                 Protected
                             </span>
@@ -235,4 +268,3 @@ function Layout() {
 }
 
 export default Layout;
-
