@@ -1,8 +1,6 @@
-// src/context/AuthContext.jsx
+import { createContext, useContext, useMemo, useState } from "react";
 
-import { createContext, useContext, useState } from "react";
-
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [token, setToken] = useState(() => {
@@ -19,22 +17,28 @@ export function AuthProvider({ children }) {
         setToken(null);
     };
 
-    const isAuthenticated = Boolean(token);
+    const value = useMemo(() => {
+        return {
+            token,
+            isAuthenticated: Boolean(token),
+            login,
+            logout
+        };
+    }, [token]);
 
     return (
-        <AuthContext.Provider
-            value={{
-                token,
-                isAuthenticated,
-                login,
-                logout
-            }}
-        >
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+
+    if (!context) {
+        throw new Error("useAuth must be used inside AuthProvider");
+    }
+
+    return context;
 }
