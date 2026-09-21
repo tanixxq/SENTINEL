@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Server, X, RefreshCw } from "lucide-react";
 import api from "../services/api";
+import { useNavigate } from "react-router-dom";
 
 function Monitors() {
     const [monitors, setMonitors] = useState([]);
@@ -10,6 +11,8 @@ function Monitors() {
     const [creating, setCreating] = useState(false);
     const [checkingId, setCheckingId] = useState(null);
     const [error, setError] = useState("");
+
+    const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
         name: "",
@@ -278,9 +281,12 @@ function Monitors() {
                                     />
 
                                     <div className="min-w-0">
-                                        <p className="truncate text-xs font-medium text-zinc-300">
-                                            {monitor.name || "Unnamed monitor"}
-                                        </p>
+                                    <button
+    onClick={() => navigate(`/monitors/${monitor._id}`)}
+    className="truncate text-left text-xs font-medium text-zinc-300 transition hover:text-emerald-400"
+>
+    {monitor.name || "Unnamed monitor"}
+</button>
 
                                         <p className="mt-1 truncate text-[10px] text-zinc-700">
                                             {monitor.url}
