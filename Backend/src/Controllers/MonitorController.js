@@ -1,9 +1,8 @@
+
 import Monitor from "../Models/Monitor.js";
 import { runMonitorCheck } from "../Services/MonitorService.js";
 import MonitorCheck from "../Models/MonitorCheck.js";
 import Incident from "../Models/Incident.js";
-
-
 
 export const createMonitor = async (req, res) => {
     try {
@@ -61,7 +60,6 @@ export const getMonitor = async (req, res) => {
     }
 };
 
-
 export const checkMonitorStatus = async (req, res) => {
     try {
         const monitor = await Monitor.findOne({
@@ -90,12 +88,6 @@ export const checkMonitorStatus = async (req, res) => {
     }
 };
 
-
-
-
-
-
-
 export const getMonitorHistory = async (req, res) => {
     try {
         const monitor = await Monitor.findOne({
@@ -110,7 +102,7 @@ export const getMonitorHistory = async (req, res) => {
         }
 
         const history = await MonitorCheck.find({
-            monitor: req.params.id
+            monitor: monitor._id
         }).sort({ checkedAt: -1 });
 
         res.json(history);
@@ -136,7 +128,7 @@ export const getMonitorMetrics = async (req, res) => {
         }
 
         const checks = await MonitorCheck.find({
-            monitor: req.params.id
+            monitor: monitor._id
         });
 
         if (checks.length === 0) {
@@ -150,11 +142,11 @@ export const getMonitorMetrics = async (req, res) => {
         }
 
         const successfulChecks = checks.filter(
-            check => check.status === "UP"
+            (check) => check.status === "UP"
         ).length;
 
         const failedChecks = checks.filter(
-            check => check.status === "DOWN"
+            (check) => check.status === "DOWN"
         ).length;
 
         const totalResponseTime = checks.reduce(
@@ -169,8 +161,8 @@ export const getMonitorMetrics = async (req, res) => {
             (successfulChecks / checks.length) * 100;
 
         res.json({
-            uptime,
-            averageResponseTime,
+            uptime: Number(uptime.toFixed(2)),
+            averageResponseTime: Math.round(averageResponseTime),
             totalChecks: checks.length,
             successfulChecks,
             failedChecks
@@ -197,7 +189,7 @@ export const getMonitorIncidents = async (req, res) => {
         }
 
         const incidents = await Incident.find({
-            monitor: req.params.id
+            monitor: monitor._id
         }).sort({ startedAt: -1 });
 
         res.json(incidents);
@@ -269,7 +261,6 @@ export const getMonitorDashboard = async (req, res) => {
                 responseTime: monitor.responseTime,
                 lastCheckedAt: monitor.lastCheckedAt
             },
-
             metrics: {
                 totalChecks,
                 successfulChecks,
@@ -277,22 +268,58 @@ export const getMonitorDashboard = async (req, res) => {
                 uptime: Number(uptime.toFixed(2)),
                 averageResponseTime: Math.round(averageResponseTime)
             },
-
             recentChecks: recentChecks.map((check) => ({
                 status: check.status,
                 responseTime: check.responseTime,
                 checkedAt: check.checkedAt
             })),
-
             incidents: {
                 total: incidents.length,
                 active: activeIncidents
             }
         });
-
     } catch (error) {
         res.status(500).json({
             message: "Failed to load dashboard"
         });
     }
 };
+
+export const deleteMonitor = async (req, res) => {
+    try {
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
+
+        if (!monitor) {
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+        }
+
+        await MonitorCheck.deleteMany({
+            monitor: monitor._id
+        });
+
+        await Incident.deleteMany({
+            monitor: monitor._id
+        });
+
+        await Monitor.deleteOne({
+            _id: monitor._id
+        });
+
+        res.json({
+            message: "Monitor deleted successfully"
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to delete monitor",
+            error: error.message
+        });
+    }
+};
+

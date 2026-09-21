@@ -1,6 +1,12 @@
 
 import { useEffect, useState } from "react";
-import { Plus, Server, X, RefreshCw } from "lucide-react";
+import {
+    Plus,
+    Server,
+    X,
+    RefreshCw,
+    Trash2
+} from "lucide-react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +16,7 @@ function Monitors() {
     const [showForm, setShowForm] = useState(false);
     const [creating, setCreating] = useState(false);
     const [checkingId, setCheckingId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
     const [error, setError] = useState("");
 
     const navigate = useNavigate();
@@ -102,6 +109,34 @@ function Monitors() {
             );
         } finally {
             setCheckingId(null);
+        }
+    };
+
+    const handleDelete = async (monitorId) => {
+        const confirmed = window.confirm(
+            "Delete this monitor and all of its history and incidents?"
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setDeletingId(monitorId);
+            setError("");
+
+            await api.delete(`/monitors/${monitorId}`);
+
+            await fetchMonitors();
+        } catch (error) {
+            console.error(error);
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to delete monitor."
+            );
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -199,13 +234,15 @@ function Monitors() {
                             />
                         </div>
 
-                        <div className="sm:col-span-2 flex justify-end">
+                        <div className="flex justify-end sm:col-span-2">
                             <button
                                 type="submit"
                                 disabled={creating}
                                 className="h-10 rounded-lg bg-emerald-400 px-4 text-xs font-medium text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                {creating ? "Creating..." : "Create monitor"}
+                                {creating
+                                    ? "Creating..."
+                                    : "Create monitor"}
                             </button>
                         </div>
                     </form>
@@ -226,7 +263,9 @@ function Monitors() {
 
                     <span className="rounded-md border border-white/[0.06] bg-white/[0.025] px-2 py-1 text-[10px] text-zinc-600">
                         {monitors.length}{" "}
-                        {monitors.length === 1 ? "monitor" : "monitors"}
+                        {monitors.length === 1
+                            ? "monitor"
+                            : "monitors"}
                     </span>
                 </div>
 
@@ -275,18 +314,23 @@ function Monitors() {
                                             monitor.status === "UP"
                                                 ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
                                                 : monitor.status === "DOWN"
-                                                ? "bg-red-400"
-                                                : "bg-amber-400"
+                                                  ? "bg-red-400"
+                                                  : "bg-amber-400"
                                         }`}
                                     />
 
                                     <div className="min-w-0">
-                                    <button
-    onClick={() => navigate(`/monitors/${monitor._id}`)}
-    className="truncate text-left text-xs font-medium text-zinc-300 transition hover:text-emerald-400"
->
-    {monitor.name || "Unnamed monitor"}
-</button>
+                                        <button
+                                            onClick={() =>
+                                                navigate(
+                                                    `/monitors/${monitor._id}`
+                                                )
+                                            }
+                                            className="truncate text-left text-xs font-medium text-zinc-300 transition hover:text-emerald-400"
+                                        >
+                                            {monitor.name ||
+                                                "Unnamed monitor"}
+                                        </button>
 
                                         <p className="mt-1 truncate text-[10px] text-zinc-700">
                                             {monitor.url}
@@ -304,9 +348,10 @@ function Monitors() {
                                             className={`mt-1 text-[11px] ${
                                                 monitor.status === "UP"
                                                     ? "text-emerald-400/70"
-                                                    : monitor.status === "DOWN"
-                                                    ? "text-red-400/70"
-                                                    : "text-amber-400/70"
+                                                    : monitor.status ===
+                                                        "DOWN"
+                                                      ? "text-red-400/70"
+                                                      : "text-amber-400/70"
                                             }`}
                                         >
                                             {monitor.status}
@@ -344,7 +389,8 @@ function Monitors() {
                                             handleCheck(monitor._id)
                                         }
                                         disabled={
-                                            checkingId === monitor._id
+                                            checkingId === monitor._id ||
+                                            deletingId === monitor._id
                                         }
                                         className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:border-emerald-400/20 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
@@ -360,6 +406,30 @@ function Monitors() {
                                         {checkingId === monitor._id
                                             ? "Checking..."
                                             : "Check now"}
+                                    </button>
+
+                                    <button
+                                        onClick={() =>
+                                            handleDelete(monitor._id)
+                                        }
+                                        disabled={
+                                            deletingId === monitor._id ||
+                                            checkingId === monitor._id
+                                        }
+                                        className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-400/10 bg-red-400/[0.03] px-3 text-[10px] font-medium text-red-400/60 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <Trash2
+                                            size={12}
+                                            className={
+                                                deletingId === monitor._id
+                                                    ? "animate-pulse"
+                                                    : ""
+                                            }
+                                        />
+
+                                        {deletingId === monitor._id
+                                            ? "Deleting..."
+                                            : "Delete"}
                                     </button>
                                 </div>
                             </div>
