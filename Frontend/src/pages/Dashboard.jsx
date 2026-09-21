@@ -69,36 +69,33 @@ function Dashboard() {
                 activeIncidents: 0
             };
         }
-
+    
         let totalChecks = 0;
         let successfulChecks = 0;
         let totalResponse = 0;
         let activeIncidents = 0;
-
+    
         dashboards.forEach((dashboard) => {
             const metrics = dashboard.metrics;
-
+    
             totalChecks += metrics.totalChecks;
-            successfulChecks +=
-                Math.round(
-                    (metrics.uptime / 100) * metrics.totalChecks
-                );
-
+            successfulChecks += metrics.successfulChecks;
             totalResponse +=
                 metrics.averageResponseTime * metrics.totalChecks;
-
             activeIncidents += dashboard.incidents.active;
         });
-
+    
         return {
             uptime:
                 totalChecks === 0
                     ? 0
                     : (successfulChecks / totalChecks) * 100,
+    
             averageResponseTime:
                 totalChecks === 0
                     ? 0
                     : totalResponse / totalChecks,
+    
             activeIncidents
         };
     }, [dashboards]);

@@ -94,6 +94,8 @@ export const checkMonitorStatus = async (req, res) => {
 
 
 
+
+
 export const getMonitorHistory = async (req, res) => {
     try {
         const monitor = await Monitor.findOne({
@@ -208,68 +210,58 @@ export const getMonitorIncidents = async (req, res) => {
 };
 
 export const getMonitorDashboard = async (req, res) => {
-
     try {
-
         const monitor = await Monitor.findOne({
             _id: req.params.id,
             user: req.user.id
         });
 
-
         if (!monitor) {
-
             return res.status(404).json({
                 message: "Monitor not found"
             });
-
         }
-
 
         const checks = await MonitorCheck.find({
             monitor: monitor._id
-        })
-        .sort({ checkedAt: -1 })
-        .limit(10);
+        }).sort({ checkedAt: -1 });
 
+        const totalChecks = checks.length;
 
+        const successfulChecks = checks.filter(
+            (check) => check.status === "UP"
+        ).length;
 
-        const totalChecks = await MonitorCheck.countDocuments({
-            monitor: monitor._id
-        });
+        const failedChecks = checks.filter(
+            (check) => check.status === "DOWN"
+        ).length;
 
+        const totalResponseTime = checks.reduce(
+            (sum, check) => sum + (check.responseTime || 0),
+            0
+        );
 
+        const averageResponseTime =
+            totalChecks === 0
+                ? 0
+                : totalResponseTime / totalChecks;
 
-        const successfulChecks = await MonitorCheck.countDocuments({
-            monitor: monitor._id,
-            status: "UP"
-        });
+        const uptime =
+            totalChecks === 0
+                ? 0
+                : (successfulChecks / totalChecks) * 100;
 
-
-
-        const averageResponse = checks.length === 0
-            ? 0
-            : checks.reduce(
-                (sum, check) => sum + (check.responseTime || 0),
-                0
-            ) / checks.length;
-
-
+        const recentChecks = checks.slice(0, 10);
 
         const incidents = await Incident.find({
             monitor: monitor._id
         });
 
-
-
         const activeIncidents = incidents.filter(
-            incident => incident.status === "ONGOING"
+            (incident) => incident.status === "ONGOING"
         ).length;
 
-
-
         res.json({
-
             monitor: {
                 name: monitor.name,
                 url: monitor.url,
@@ -278,51 +270,29 @@ export const getMonitorDashboard = async (req, res) => {
                 lastCheckedAt: monitor.lastCheckedAt
             },
 
-
             metrics: {
-
                 totalChecks,
-
-                uptime:
-                    totalChecks === 0
-                    ? 0
-                    : Number(
-                        ((successfulChecks / totalChecks) * 100)
-                        .toFixed(2)
-                    ),
-
-                averageResponseTime:
-                    Math.round(averageResponse)
-
+                successfulChecks,
+                failedChecks,
+                uptime: Number(uptime.toFixed(2)),
+                averageResponseTime: Math.round(averageResponseTime)
             },
 
-
-            recentChecks: checks.map(check => ({
+            recentChecks: recentChecks.map((check) => ({
                 status: check.status,
                 responseTime: check.responseTime,
                 checkedAt: check.checkedAt
             })),
 
-
             incidents: {
-
                 total: incidents.length,
-
                 active: activeIncidents
-
             }
-
         });
 
-
-    } catch(error) {
-
+    } catch (error) {
         res.status(500).json({
-
             message: "Failed to load dashboard"
-
         });
-
     }
-
 };
