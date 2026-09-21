@@ -63,7 +63,10 @@ export const getMonitor = async (req, res) => {
 
 export const checkMonitorStatus = async (req, res) => {
     try {
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
         if (!monitor) {
             return res.status(404).json({
@@ -210,7 +213,10 @@ export const getMonitorDashboard = async (req, res) => {
 
     try {
 
-        const monitor = await Monitor.findById(req.params.id);
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
 
 
         if (!monitor) {

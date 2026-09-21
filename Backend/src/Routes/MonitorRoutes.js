@@ -18,7 +18,7 @@ router.post("/",authMiddleware, createMonitor);
 
 router.get("/",authMiddleware, getMonitors);
 
-router.get("/:id/check", checkMonitorStatus);
+router.get("/:id/check", authMiddleware, checkMonitorStatus);
 
 router.get("/:id/history",authMiddleware, getMonitorHistory);
 
