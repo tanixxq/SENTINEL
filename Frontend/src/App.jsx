@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+
+import { Routes, Route, Navigate, Link } from "react-router-dom";
+
 import {
     Activity,
     ArrowRight,
@@ -8,30 +10,23 @@ import {
     Server,
     ShieldCheck
 } from "lucide-react";
+
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoutes";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/AuthContext";
 
 function Home() {
     return (
         <div className="min-h-screen bg-[#070809] text-zinc-100">
             <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.06),transparent_38%)]" />
-
             <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent_80%)]" />
 
             <header className="relative z-10 flex h-[76px] items-center justify-between border-b border-white/[0.07] px-6 sm:px-10">
-                <Link
-                    to="/"
-                    className="flex items-center gap-3"
-                >
+                <Link to="/" className="flex items-center gap-3">
                     <div className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06]">
-                        <Activity
-                            size={18}
-                            className="text-zinc-100"
-                        />
-
+                        <Activity size={18} className="text-zinc-100" />
                         <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                     </div>
 
@@ -39,7 +34,6 @@ function Home() {
                         <p className="text-[13px] font-semibold tracking-[0.2em]">
                             SENTINEL
                         </p>
-
                         <p className="mt-0.5 text-[9px] uppercase tracking-[0.18em] text-zinc-600">
                             Reliability
                         </p>
@@ -69,7 +63,6 @@ function Home() {
                     <section>
                         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/10 bg-emerald-400/[0.045] px-3 py-1.5">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
-
                             <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-400/80">
                                 Website reliability monitoring
                             </span>
@@ -142,7 +135,6 @@ function Home() {
                             <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4">
                                 <div className="flex items-center gap-2">
                                     <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.7)]" />
-
                                     <span className="text-[11px] font-medium text-zinc-300">
                                         System overview
                                     </span>
@@ -159,7 +151,6 @@ function Home() {
                                         <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
                                             Uptime
                                         </span>
-
                                         <Activity
                                             size={14}
                                             className="text-emerald-400/60"
@@ -180,7 +171,6 @@ function Home() {
                                         <span className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
                                             Response
                                         </span>
-
                                         <Clock3
                                             size={14}
                                             className="text-zinc-600"
@@ -206,7 +196,6 @@ function Home() {
                                         <p className="text-xs font-medium text-zinc-300">
                                             Service health
                                         </p>
-
                                         <p className="mt-1 text-[10px] text-zinc-600">
                                             Recent monitoring activity
                                         </p>
@@ -233,7 +222,6 @@ function Home() {
                                 <div className="mt-4 flex items-center justify-between border-t border-white/[0.06] pt-4">
                                     <div className="flex items-center gap-2">
                                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
                                         <span className="text-[10px] text-zinc-500">
                                             All systems operational
                                         </span>
@@ -512,45 +500,44 @@ function Placeholder({ title }) {
 
 function App() {
     return (
-        <BrowserRouter>
-            <AuthProvider>
-                <Routes>
-                    <Route path="/" element={<HomeRedirect />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+        <Routes>
+            <Route path="/" element={<HomeRedirect />} />
 
-                    <Route element={<ProtectedRoute />}>
-                        <Route element={<Layout />}>
-                            <Route
-                                path="/dashboard"
-                                element={<Dashboard />}
-                            />
+            <Route path="/login" element={<Login />} />
 
-                            <Route
-                                path="/monitors"
-                                element={<Placeholder title="Monitors" />}
-                            />
+            <Route path="/register" element={<Register />} />
 
-                            <Route
-                                path="/incidents"
-                                element={<Placeholder title="Incidents" />}
-                            />
-
-                            <Route
-                                path="/settings"
-                                element={<Placeholder title="Settings" />}
-                            />
-                        </Route>
-                    </Route>
+            <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                    <Route
+                        path="/dashboard"
+                        element={<Dashboard />}
+                    />
 
                     <Route
-                        path="*"
-                        element={<Navigate to="/" replace />}
+                        path="/monitors"
+                        element={<Placeholder title="Monitors" />}
                     />
-                </Routes>
-            </AuthProvider>
-        </BrowserRouter>
+
+                    <Route
+                        path="/incidents"
+                        element={<Placeholder title="Incidents" />}
+                    />
+
+                    <Route
+                        path="/settings"
+                        element={<Placeholder title="Settings" />}
+                    />
+                </Route>
+            </Route>
+
+            <Route
+                path="*"
+                element={<Navigate to="/" replace />}
+            />
+        </Routes>
     );
 }
 
 export default App;
+
