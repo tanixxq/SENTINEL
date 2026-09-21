@@ -2,8 +2,11 @@
 import MonitorCheck from "../Models/MonitorCheck.js";
 import Incident from "../Models/Incident.js";
 import { checkMonitor } from "./MonitorChecker.js";
+import { sendDownAlert, sendRecoveryAlert } from "./AlertServices.js";
 
 export const runMonitorCheck = async (monitor) => {
+    await monitor.populate("user", "email");
+
     const result = await checkMonitor(monitor.url);
 
     await MonitorCheck.create({
@@ -25,6 +28,15 @@ export const runMonitorCheck = async (monitor) => {
                 status: "ONGOING",
                 startedAt: new Date()
             });
+
+            await sendDownAlert(
+                monitor.user.email,
+                monitor
+            );
+
+            console.log(
+                `[SENTINEL] INCIDENT STARTED → ${monitor.name || monitor.url}`
+            );
         }
     }
 
@@ -39,6 +51,15 @@ export const runMonitorCheck = async (monitor) => {
                 ongoingIncident.startedAt.getTime();
 
             await ongoingIncident.save();
+
+            await sendRecoveryAlert(
+                monitor.user.email,
+                monitor
+            );
+
+            console.log(
+                `[SENTINEL] INCIDENT RESOLVED → ${monitor.name || monitor.url}`
+            );
         }
     }
 
@@ -47,6 +68,10 @@ export const runMonitorCheck = async (monitor) => {
     monitor.lastCheckedAt = new Date();
 
     await monitor.save();
+
+    console.log(
+        `[SENTINEL] ${monitor.name || monitor.url} → ${result.status} (${result.responseTime}ms)`
+    );
 
     return result;
 };

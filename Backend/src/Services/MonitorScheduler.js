@@ -1,90 +1,20 @@
 
 import Monitor from "../Models/Monitor.js";
-import MonitorCheck from "../Models/MonitorCheck.js";
-import { checkMonitor } from "./MonitorChecker.js";
-import Incident from "../Models/Incident.js";
-import { sendDownAlert, sendRecoveryAlert } from "./AlertServices.js";
-
-const processMonitor = async (monitor) => {
-    const result = await checkMonitor(monitor.url);
-
-    await MonitorCheck.create({
-        monitor: monitor._id,
-        status: result.status,
-        statusCode: result.statusCode,
-        responseTime: result.responseTime
-    });
-
-    if (result.status === "DOWN") {
-        const ongoingIncident = await Incident.findOne({
-            monitor: monitor._id,
-            status: "ONGOING"
-        });
-
-        if (!ongoingIncident) {
-            await Incident.create({
-                monitor: monitor._id,
-                status: "ONGOING",
-                startedAt: new Date()
-            });
-
-            await sendDownAlert(
-                monitor.user.email,
-                monitor
-            );
-
-            console.log(
-                `[SENTINEL] INCIDENT STARTED → ${monitor.name || monitor.url}`
-            );
-        }
-    } else if (result.status === "UP") {
-        const ongoingIncident = await Incident.findOne({
-            monitor: monitor._id,
-            status: "ONGOING"
-        });
-
-        if (ongoingIncident) {
-            const resolvedAt = new Date();
-
-            ongoingIncident.status = "RESOLVED";
-            ongoingIncident.resolvedAt = resolvedAt;
-            ongoingIncident.duration =
-                resolvedAt.getTime() -
-                ongoingIncident.startedAt.getTime();
-
-            await ongoingIncident.save();
-
-            await sendRecoveryAlert(
-                monitor.user.email,
-                monitor
-            );
-
-            console.log(
-                `[SENTINEL] INCIDENT RESOLVED → ${monitor.name || monitor.url}`
-            );
-        }
-    }
-
-    monitor.status = result.status;
-    monitor.responseTime = result.responseTime;
-    monitor.lastCheckedAt = new Date();
-
-    await monitor.save();
-
-    console.log(
-        `[SENTINEL] ${monitor.name || monitor.url} → ${result.status} (${result.responseTime}ms)`
-    );
-};
+import { runMonitorCheck } from "./MonitorService.js";
 
 const runMonitorChecks = async () => {
     try {
         const monitors = await Monitor.find({
             isActive: true
-        }).populate("user", "email");
+        });
+
+        console.log(
+            `[SENTINEL] Running scheduled checks for ${monitors.length} monitors`
+        );
 
         await Promise.all(
-            monitors.map(
-                (monitor) => processMonitor(monitor)
+            monitors.map((monitor) =>
+                runMonitorCheck(monitor)
             )
         );
     } catch (error) {
