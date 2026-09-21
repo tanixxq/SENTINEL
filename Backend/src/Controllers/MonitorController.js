@@ -61,6 +61,7 @@ export const getMonitor = async (req, res) => {
     }
 };
 
+
 export const checkMonitorStatus = async (req, res) => {
     try {
         const monitor = await Monitor.findOne({
@@ -76,6 +77,13 @@ export const checkMonitorStatus = async (req, res) => {
 
         const result = await checkMonitor(monitor.url);
 
+        await MonitorCheck.create({
+            monitor: monitor._id,
+            status: result.status,
+            statusCode: result.statusCode,
+            responseTime: result.responseTime
+        });
+
         monitor.status = result.status;
         monitor.responseTime = result.responseTime;
         monitor.lastCheckedAt = new Date();
@@ -86,13 +94,16 @@ export const checkMonitorStatus = async (req, res) => {
             monitor,
             check: result
         });
-
     } catch (error) {
+        console.error(error);
+
         res.status(500).json({
             message: "Failed to check monitor"
         });
     }
 };
+
+
 
 
 
