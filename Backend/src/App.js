@@ -4,6 +4,7 @@ import MonitorRoutes from "./Routes/MonitorRoutes.js";
 import AuthRoutes from "./Routes/AuthRoutes.js";
 import authMiddleware from "./Middleware/AuthMiddleware.js";
 import { sendDownAlert } from "./Services/AlertServices.js";
+import IncidentRoutes from "./Routes/IncidentRoutes.js";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use("/api/auth", AuthRoutes);
 app.use("/api/monitors", MonitorRoutes);
+app.use("/api/incidents", IncidentRoutes);
 
 app.get("/protected-test", authMiddleware, (req, res) => {
     res.json({
