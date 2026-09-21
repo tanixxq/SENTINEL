@@ -84,6 +84,35 @@ export const checkMonitorStatus = async (req, res) => {
             responseTime: result.responseTime
         });
 
+        const ongoingIncident = await Incident.findOne({
+            monitor: monitor._id,
+            status: "ONGOING"
+        });
+
+        if (result.status === "DOWN") {
+            if (!ongoingIncident) {
+                await Incident.create({
+                    monitor: monitor._id,
+                    status: "ONGOING",
+                    startedAt: new Date()
+                });
+            }
+        }
+
+        if (result.status === "UP") {
+            if (ongoingIncident) {
+                const resolvedAt = new Date();
+
+                ongoingIncident.status = "RESOLVED";
+                ongoingIncident.resolvedAt = resolvedAt;
+                ongoingIncident.duration =
+                    resolvedAt.getTime() -
+                    ongoingIncident.startedAt.getTime();
+
+                await ongoingIncident.save();
+            }
+        }
+
         monitor.status = result.status;
         monitor.responseTime = result.responseTime;
         monitor.lastCheckedAt = new Date();
