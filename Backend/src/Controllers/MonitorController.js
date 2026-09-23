@@ -323,3 +323,65 @@ export const deleteMonitor = async (req, res) => {
     }
 };
 
+
+export const pauseMonitor = async (req, res) => {
+    try {
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
+
+        if (!monitor) {
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+        }
+
+        monitor.isActive = false;
+
+        await monitor.save();
+
+        res.json({
+            message: "Monitor paused successfully",
+            monitor
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to pause monitor",
+            error: error.message
+        });
+    }
+};
+
+export const resumeMonitor = async (req, res) => {
+    try {
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
+
+        if (!monitor) {
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+        }
+
+        monitor.isActive = true;
+
+        await monitor.save();
+
+        res.json({
+            message: "Monitor resumed successfully",
+            monitor
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to resume monitor",
+            error: error.message
+        });
+    }
+};

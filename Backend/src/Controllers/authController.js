@@ -86,7 +86,6 @@ export const register = async (req, res) => {
 
 
 export const login = async (req, res) => {
-
     try {
 
         const {
@@ -164,7 +163,6 @@ export const login = async (req, res) => {
 
         });
 
-
     } catch(error) {
 
         res.status(500).json({
@@ -174,7 +172,5 @@ export const login = async (req, res) => {
             error: error.message
 
         });
-
     }
-
 };

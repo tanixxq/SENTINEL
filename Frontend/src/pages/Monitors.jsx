@@ -1,11 +1,12 @@
-
 import { useEffect, useState } from "react";
 import {
     Plus,
     Server,
     X,
     RefreshCw,
-    Trash2
+    Trash2,
+    Pause,
+    Play
 } from "lucide-react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +18,7 @@ function Monitors() {
     const [creating, setCreating] = useState(false);
     const [checkingId, setCheckingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [togglingId, setTogglingId] = useState(null);
     const [error, setError] = useState("");
 
     const navigate = useNavigate();
@@ -137,6 +139,30 @@ function Monitors() {
             );
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleToggleMonitoring = async (monitor) => {
+        try {
+            setTogglingId(monitor._id);
+            setError("");
+
+            if (monitor.isActive) {
+                await api.patch(`/monitors/${monitor._id}/pause`);
+            } else {
+                await api.patch(`/monitors/${monitor._id}/resume`);
+            }
+
+            await fetchMonitors();
+        } catch (error) {
+            console.error(error);
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to update monitor."
+            );
+        } finally {
+            setTogglingId(null);
         }
     };
 
@@ -311,11 +337,13 @@ function Monitors() {
                                 <div className="flex min-w-0 items-center gap-3">
                                     <span
                                         className={`h-2 w-2 shrink-0 rounded-full ${
-                                            monitor.status === "UP"
-                                                ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
-                                                : monitor.status === "DOWN"
-                                                  ? "bg-red-400"
-                                                  : "bg-amber-400"
+                                            monitor.isActive === false
+                                                ? "bg-zinc-600"
+                                                : monitor.status === "UP"
+                                                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                                                  : monitor.status === "DOWN"
+                                                    ? "bg-red-400"
+                                                    : "bg-amber-400"
                                         }`}
                                     />
 
@@ -335,6 +363,12 @@ function Monitors() {
                                         <p className="mt-1 truncate text-[10px] text-zinc-700">
                                             {monitor.url}
                                         </p>
+
+                                        {monitor.isActive === false && (
+                                            <p className="mt-1 text-[10px] text-zinc-600">
+                                                Monitoring paused
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -346,15 +380,19 @@ function Monitors() {
 
                                         <p
                                             className={`mt-1 text-[11px] ${
-                                                monitor.status === "UP"
-                                                    ? "text-emerald-400/70"
-                                                    : monitor.status ===
-                                                        "DOWN"
-                                                      ? "text-red-400/70"
-                                                      : "text-amber-400/70"
+                                                monitor.isActive === false
+                                                    ? "text-zinc-600"
+                                                    : monitor.status === "UP"
+                                                      ? "text-emerald-400/70"
+                                                      : monitor.status ===
+                                                          "DOWN"
+                                                        ? "text-red-400/70"
+                                                        : "text-amber-400/70"
                                             }`}
                                         >
-                                            {monitor.status}
+                                            {monitor.isActive === false
+                                                ? "PAUSED"
+                                                : monitor.status}
                                         </p>
                                     </div>
 
@@ -390,7 +428,8 @@ function Monitors() {
                                         }
                                         disabled={
                                             checkingId === monitor._id ||
-                                            deletingId === monitor._id
+                                            deletingId === monitor._id ||
+                                            togglingId === monitor._id
                                         }
                                         className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:border-emerald-400/20 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
@@ -410,11 +449,40 @@ function Monitors() {
 
                                     <button
                                         onClick={() =>
+                                            handleToggleMonitoring(monitor)
+                                        }
+                                        disabled={
+                                            togglingId === monitor._id ||
+                                            deletingId === monitor._id ||
+                                            checkingId === monitor._id
+                                        }
+                                        className={`inline-flex h-8 items-center gap-2 rounded-lg border px-3 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                            monitor.isActive
+                                                ? "border-amber-400/10 bg-amber-400/[0.03] text-amber-400/60 hover:border-amber-400/20 hover:bg-amber-400/[0.06] hover:text-amber-400"
+                                                : "border-emerald-400/10 bg-emerald-400/[0.03] text-emerald-400/60 hover:border-emerald-400/20 hover:bg-emerald-400/[0.06] hover:text-emerald-400"
+                                        }`}
+                                    >
+                                        {monitor.isActive ? (
+                                            <Pause size={12} />
+                                        ) : (
+                                            <Play size={12} />
+                                        )}
+
+                                        {togglingId === monitor._id
+                                            ? "Updating..."
+                                            : monitor.isActive
+                                              ? "Pause"
+                                              : "Resume"}
+                                    </button>
+
+                                    <button
+                                        onClick={() =>
                                             handleDelete(monitor._id)
                                         }
                                         disabled={
                                             deletingId === monitor._id ||
-                                            checkingId === monitor._id
+                                            checkingId === monitor._id ||
+                                            togglingId === monitor._id
                                         }
                                         className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-400/10 bg-red-400/[0.03] px-3 text-[10px] font-medium text-red-400/60 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
@@ -465,4 +533,3 @@ function formatRelativeTime(date) {
 }
 
 export default Monitors;
-

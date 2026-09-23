@@ -10,7 +10,9 @@ import {
     getMonitorMetrics,
     getMonitorIncidents,
     getMonitorDashboard,
-    deleteMonitor
+    deleteMonitor,
+    pauseMonitor,
+    resumeMonitor
 } from "../Controllers/MonitorController.js";
 
 import authMiddleware from "../Middleware/AuthMiddleware.js";
@@ -32,6 +34,10 @@ router.get("/:id/incidents", authMiddleware, getMonitorIncidents);
 router.get("/:id/dashboard", authMiddleware, getMonitorDashboard);
 
 router.delete("/:id", authMiddleware, deleteMonitor);
+
+router.patch("/:id/pause", authMiddleware, pauseMonitor);
+
+router.patch("/:id/resume", authMiddleware, resumeMonitor);
 
 router.get("/:id", authMiddleware, getMonitor);
 
