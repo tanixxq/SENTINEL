@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
     Plus,
@@ -6,7 +7,8 @@ import {
     RefreshCw,
     Trash2,
     Pause,
-    Play
+    Play,
+    Pencil
 } from "lucide-react";
 import api from "../services/api";
 import { useNavigate } from "react-router-dom";
@@ -19,11 +21,18 @@ function Monitors() {
     const [checkingId, setCheckingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
     const [togglingId, setTogglingId] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [updatingId, setUpdatingId] = useState(null);
     const [error, setError] = useState("");
 
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
+        name: "",
+        url: ""
+    });
+
+    const [editFormData, setEditFormData] = useState({
         name: "",
         url: ""
     });
@@ -52,6 +61,15 @@ function Monitors() {
         const { name, value } = event.target;
 
         setFormData((previous) => ({
+            ...previous,
+            [name]: value
+        }));
+    };
+
+    const handleEditChange = (event) => {
+        const { name, value } = event.target;
+
+        setEditFormData((previous) => ({
             ...previous,
             [name]: value
         }));
@@ -163,6 +181,66 @@ function Monitors() {
             );
         } finally {
             setTogglingId(null);
+        }
+    };
+
+    const handleEdit = (monitor) => {
+        setEditingId(monitor._id);
+
+        setEditFormData({
+            name: monitor.name || "",
+            url: monitor.url || ""
+        });
+
+        setError("");
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+
+        setEditFormData({
+            name: "",
+            url: ""
+        });
+
+        setError("");
+    };
+
+    const handleUpdate = async (monitorId) => {
+        if (
+            !editFormData.name.trim() ||
+            !editFormData.url.trim()
+        ) {
+            setError("Name and URL are required.");
+            return;
+        }
+
+        try {
+            setUpdatingId(monitorId);
+            setError("");
+
+            await api.patch(`/monitors/${monitorId}`, {
+                name: editFormData.name.trim(),
+                url: editFormData.url.trim()
+            });
+
+            setEditingId(null);
+
+            setEditFormData({
+                name: "",
+                url: ""
+            });
+
+            await fetchMonitors();
+        } catch (error) {
+            console.error(error);
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to update monitor."
+            );
+        } finally {
+            setUpdatingId(null);
         }
     };
 
@@ -334,172 +412,282 @@ function Monitors() {
                                 key={monitor._id}
                                 className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <div className="flex min-w-0 items-center gap-3">
-                                    <span
-                                        className={`h-2 w-2 shrink-0 rounded-full ${
-                                            monitor.isActive === false
-                                                ? "bg-zinc-600"
-                                                : monitor.status === "UP"
-                                                  ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
-                                                  : monitor.status === "DOWN"
-                                                    ? "bg-red-400"
-                                                    : "bg-amber-400"
-                                        }`}
-                                    />
+                                {editingId === monitor._id ? (
+                                    <div className="w-full">
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+                                                    Name
+                                                </label>
 
-                                    <div className="min-w-0">
-                                        <button
-                                            onClick={() =>
-                                                navigate(
-                                                    `/monitors/${monitor._id}`
-                                                )
-                                            }
-                                            className="truncate text-left text-xs font-medium text-zinc-300 transition hover:text-emerald-400"
-                                        >
-                                            {monitor.name ||
-                                                "Unnamed monitor"}
-                                        </button>
+                                                <input
+                                                    type="text"
+                                                    name="name"
+                                                    value={editFormData.name}
+                                                    onChange={handleEditChange}
+                                                    className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs text-zinc-200 outline-none focus:border-emerald-400/30"
+                                                />
+                                            </div>
 
-                                        <p className="mt-1 truncate text-[10px] text-zinc-700">
-                                            {monitor.url}
-                                        </p>
+                                            <div>
+                                                <label className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+                                                    URL
+                                                </label>
 
-                                        {monitor.isActive === false && (
-                                            <p className="mt-1 text-[10px] text-zinc-600">
-                                                Monitoring paused
-                                            </p>
-                                        )}
+                                                <input
+                                                    type="url"
+                                                    name="url"
+                                                    value={editFormData.url}
+                                                    onChange={handleEditChange}
+                                                    className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs text-zinc-200 outline-none focus:border-emerald-400/30"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 flex justify-end gap-2">
+                                            <button
+                                                onClick={handleCancelEdit}
+                                                disabled={
+                                                    updatingId ===
+                                                    monitor._id
+                                                }
+                                                className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <X size={12} />
+                                                Cancel
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleUpdate(
+                                                        monitor._id
+                                                    )
+                                                }
+                                                disabled={
+                                                    updatingId ===
+                                                    monitor._id
+                                                }
+                                                className="inline-flex h-8 items-center gap-2 rounded-lg bg-emerald-400 px-3 text-[10px] font-medium text-zinc-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                {updatingId === monitor._id
+                                                    ? "Saving..."
+                                                    : "Save changes"}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <>
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <span
+                                                className={`h-2 w-2 shrink-0 rounded-full ${
+                                                    monitor.isActive === false
+                                                        ? "bg-zinc-600"
+                                                        : monitor.status ===
+                                                            "UP"
+                                                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
+                                                          : monitor.status ===
+                                                              "DOWN"
+                                                            ? "bg-red-400"
+                                                            : "bg-amber-400"
+                                                }`}
+                                            />
 
-                                <div className="flex flex-wrap items-center gap-6">
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
-                                            Status
-                                        </p>
+                                            <div className="min-w-0">
+                                                <button
+                                                    onClick={() =>
+                                                        navigate(
+                                                            `/monitors/${monitor._id}`
+                                                        )
+                                                    }
+                                                    className="truncate text-left text-xs font-medium text-zinc-300 transition hover:text-emerald-400"
+                                                >
+                                                    {monitor.name ||
+                                                        "Unnamed monitor"}
+                                                </button>
 
-                                        <p
-                                            className={`mt-1 text-[11px] ${
-                                                monitor.isActive === false
-                                                    ? "text-zinc-600"
-                                                    : monitor.status === "UP"
-                                                      ? "text-emerald-400/70"
-                                                      : monitor.status ===
-                                                          "DOWN"
-                                                        ? "text-red-400/70"
-                                                        : "text-amber-400/70"
-                                            }`}
-                                        >
-                                            {monitor.isActive === false
-                                                ? "PAUSED"
-                                                : monitor.status}
-                                        </p>
-                                    </div>
+                                                <p className="mt-1 truncate text-[10px] text-zinc-700">
+                                                    {monitor.url}
+                                                </p>
 
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
-                                            Response
-                                        </p>
+                                                {monitor.isActive === false && (
+                                                    <p className="mt-1 text-[10px] text-zinc-600">
+                                                        Monitoring paused
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                        <p className="mt-1 text-[11px] text-zinc-400">
-                                            {monitor.responseTime != null
-                                                ? `${monitor.responseTime} ms`
-                                                : "—"}
-                                        </p>
-                                    </div>
+                                        <div className="flex flex-wrap items-center gap-6">
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
+                                                    Status
+                                                </p>
 
-                                    <div className="hidden md:block">
-                                        <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
-                                            Last checked
-                                        </p>
+                                                <p
+                                                    className={`mt-1 text-[11px] ${
+                                                        monitor.isActive === false
+                                                            ? "text-zinc-600"
+                                                            : monitor.status ===
+                                                                "UP"
+                                                              ? "text-emerald-400/70"
+                                                              : monitor.status ===
+                                                                  "DOWN"
+                                                                ? "text-red-400/70"
+                                                                : "text-amber-400/70"
+                                                    }`}
+                                                >
+                                                    {monitor.isActive === false
+                                                        ? "PAUSED"
+                                                        : monitor.status}
+                                                </p>
+                                            </div>
 
-                                        <p className="mt-1 text-[11px] text-zinc-400">
-                                            {monitor.lastCheckedAt
-                                                ? formatRelativeTime(
-                                                      monitor.lastCheckedAt
-                                                  )
-                                                : "Never"}
-                                        </p>
-                                    </div>
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
+                                                    Response
+                                                </p>
 
-                                    <button
-                                        onClick={() =>
-                                            handleCheck(monitor._id)
-                                        }
-                                        disabled={
-                                            checkingId === monitor._id ||
-                                            deletingId === monitor._id ||
-                                            togglingId === monitor._id
-                                        }
-                                        className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:border-emerald-400/20 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <RefreshCw
-                                            size={12}
-                                            className={
-                                                checkingId === monitor._id
-                                                    ? "animate-spin"
-                                                    : ""
-                                            }
-                                        />
+                                                <p className="mt-1 text-[11px] text-zinc-400">
+                                                    {monitor.responseTime !=
+                                                    null
+                                                        ? `${monitor.responseTime} ms`
+                                                        : "—"}
+                                                </p>
+                                            </div>
 
-                                        {checkingId === monitor._id
-                                            ? "Checking..."
-                                            : "Check now"}
-                                    </button>
+                                            <div className="hidden md:block">
+                                                <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-700">
+                                                    Last checked
+                                                </p>
 
-                                    <button
-                                        onClick={() =>
-                                            handleToggleMonitoring(monitor)
-                                        }
-                                        disabled={
-                                            togglingId === monitor._id ||
-                                            deletingId === monitor._id ||
-                                            checkingId === monitor._id
-                                        }
-                                        className={`inline-flex h-8 items-center gap-2 rounded-lg border px-3 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                                            monitor.isActive
-                                                ? "border-amber-400/10 bg-amber-400/[0.03] text-amber-400/60 hover:border-amber-400/20 hover:bg-amber-400/[0.06] hover:text-amber-400"
-                                                : "border-emerald-400/10 bg-emerald-400/[0.03] text-emerald-400/60 hover:border-emerald-400/20 hover:bg-emerald-400/[0.06] hover:text-emerald-400"
-                                        }`}
-                                    >
-                                        {monitor.isActive ? (
-                                            <Pause size={12} />
-                                        ) : (
-                                            <Play size={12} />
-                                        )}
+                                                <p className="mt-1 text-[11px] text-zinc-400">
+                                                    {monitor.lastCheckedAt
+                                                        ? formatRelativeTime(
+                                                              monitor.lastCheckedAt
+                                                          )
+                                                        : "Never"}
+                                                </p>
+                                            </div>
 
-                                        {togglingId === monitor._id
-                                            ? "Updating..."
-                                            : monitor.isActive
-                                              ? "Pause"
-                                              : "Resume"}
-                                    </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleCheck(monitor._id)
+                                                }
+                                                disabled={
+                                                    checkingId ===
+                                                        monitor._id ||
+                                                    deletingId ===
+                                                        monitor._id ||
+                                                    togglingId ===
+                                                        monitor._id ||
+                                                    updatingId ===
+                                                        monitor._id
+                                                }
+                                                className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:border-emerald-400/20 hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <RefreshCw
+                                                    size={12}
+                                                    className={
+                                                        checkingId ===
+                                                        monitor._id
+                                                            ? "animate-spin"
+                                                            : ""
+                                                    }
+                                                />
 
-                                    <button
-                                        onClick={() =>
-                                            handleDelete(monitor._id)
-                                        }
-                                        disabled={
-                                            deletingId === monitor._id ||
-                                            checkingId === monitor._id ||
-                                            togglingId === monitor._id
-                                        }
-                                        className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-400/10 bg-red-400/[0.03] px-3 text-[10px] font-medium text-red-400/60 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <Trash2
-                                            size={12}
-                                            className={
-                                                deletingId === monitor._id
-                                                    ? "animate-pulse"
-                                                    : ""
-                                            }
-                                        />
+                                                {checkingId === monitor._id
+                                                    ? "Checking..."
+                                                    : "Check now"}
+                                            </button>
 
-                                        {deletingId === monitor._id
-                                            ? "Deleting..."
-                                            : "Delete"}
-                                    </button>
-                                </div>
+                                            <button
+                                                onClick={() =>
+                                                    handleEdit(monitor)
+                                                }
+                                                disabled={
+                                                    deletingId ===
+                                                        monitor._id ||
+                                                    checkingId ===
+                                                        monitor._id ||
+                                                    togglingId ===
+                                                        monitor._id
+                                                }
+                                                className="inline-flex h-8 items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-[10px] font-medium text-zinc-400 transition hover:border-white/[0.15] hover:bg-white/[0.05] hover:text-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <Pencil size={12} />
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleToggleMonitoring(
+                                                        monitor
+                                                    )
+                                                }
+                                                disabled={
+                                                    togglingId ===
+                                                        monitor._id ||
+                                                    deletingId ===
+                                                        monitor._id ||
+                                                    checkingId ===
+                                                        monitor._id ||
+                                                    updatingId ===
+                                                        monitor._id
+                                                }
+                                                className={`inline-flex h-8 items-center gap-2 rounded-lg border px-3 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                                                    monitor.isActive
+                                                        ? "border-amber-400/10 bg-amber-400/[0.03] text-amber-400/60 hover:border-amber-400/20 hover:bg-amber-400/[0.06] hover:text-amber-400"
+                                                        : "border-emerald-400/10 bg-emerald-400/[0.03] text-emerald-400/60 hover:border-emerald-400/20 hover:bg-emerald-400/[0.06] hover:text-emerald-400"
+                                                }`}
+                                            >
+                                                {monitor.isActive ? (
+                                                    <Pause size={12} />
+                                                ) : (
+                                                    <Play size={12} />
+                                                )}
+
+                                                {togglingId === monitor._id
+                                                    ? "Updating..."
+                                                    : monitor.isActive
+                                                      ? "Pause"
+                                                      : "Resume"}
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(
+                                                        monitor._id
+                                                    )
+                                                }
+                                                disabled={
+                                                    deletingId ===
+                                                        monitor._id ||
+                                                    checkingId ===
+                                                        monitor._id ||
+                                                    togglingId ===
+                                                        monitor._id ||
+                                                    updatingId ===
+                                                        monitor._id
+                                                }
+                                                className="inline-flex h-8 items-center gap-2 rounded-lg border border-red-400/10 bg-red-400/[0.03] px-3 text-[10px] font-medium text-red-400/60 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <Trash2
+                                                    size={12}
+                                                    className={
+                                                        deletingId ===
+                                                        monitor._id
+                                                            ? "animate-pulse"
+                                                            : ""
+                                                    }
+                                                />
+
+                                                {deletingId === monitor._id
+                                                    ? "Deleting..."
+                                                    : "Delete"}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -533,3 +721,4 @@ function formatRelativeTime(date) {
 }
 
 export default Monitors;
+

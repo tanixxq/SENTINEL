@@ -12,7 +12,8 @@ import {
     getMonitorDashboard,
     deleteMonitor,
     pauseMonitor,
-    resumeMonitor
+    resumeMonitor,
+    updateMonitor
 } from "../Controllers/MonitorController.js";
 
 import authMiddleware from "../Middleware/AuthMiddleware.js";
@@ -38,6 +39,8 @@ router.delete("/:id", authMiddleware, deleteMonitor);
 router.patch("/:id/pause", authMiddleware, pauseMonitor);
 
 router.patch("/:id/resume", authMiddleware, resumeMonitor);
+
+router.patch("/:id", authMiddleware, updateMonitor);
 
 router.get("/:id", authMiddleware, getMonitor);
 

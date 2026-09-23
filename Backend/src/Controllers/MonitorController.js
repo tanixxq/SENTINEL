@@ -38,6 +38,46 @@ export const getMonitors = async (req, res) => {
     }
 };
 
+export const updateMonitor = async (req, res) => {
+    try {
+        const { name, url } = req.body;
+
+        if (!name?.trim() || !url?.trim()) {
+            return res.status(400).json({
+                message: "Name and URL are required"
+            });
+        }
+
+        const monitor = await Monitor.findOne({
+            _id: req.params.id,
+            user: req.user.id
+        });
+
+        if (!monitor) {
+            return res.status(404).json({
+                message: "Monitor not found"
+            });
+        }
+
+        monitor.name = name.trim();
+        monitor.url = url.trim();
+
+        await monitor.save();
+
+        res.json({
+            message: "Monitor updated successfully",
+            monitor
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            message: "Failed to update monitor",
+            error: error.message
+        });
+    }
+};
+
 export const getMonitor = async (req, res) => {
     try {
         const monitor = await Monitor.findOne({
