@@ -29,12 +29,14 @@ function Monitors() {
 
     const [formData, setFormData] = useState({
         name: "",
-        url: ""
+        url: "",
+        checkInterval: 60
     });
 
     const [editFormData, setEditFormData] = useState({
         name: "",
-        url: ""
+        url: "",
+        checkInterval: 60
     });
 
     const fetchMonitors = async () => {
@@ -89,12 +91,14 @@ function Monitors() {
 
             await api.post("/monitors", {
                 name: formData.name.trim(),
-                url: formData.url.trim()
+                url: formData.url.trim(),
+                checkInterval: Number(formData.checkInterval)
             });
 
             setFormData({
                 name: "",
-                url: ""
+                url: "",
+                checkInterval: 60
             });
 
             setShowForm(false);
@@ -186,12 +190,13 @@ function Monitors() {
 
     const handleEdit = (monitor) => {
         setEditingId(monitor._id);
-
+    
         setEditFormData({
             name: monitor.name || "",
-            url: monitor.url || ""
+            url: monitor.url || "",
+            checkInterval: monitor.checkInterval || 60
         });
-
+    
         setError("");
     };
 
@@ -221,7 +226,8 @@ function Monitors() {
 
             await api.patch(`/monitors/${monitorId}`, {
                 name: editFormData.name.trim(),
-                url: editFormData.url.trim()
+                url: editFormData.url.trim(),
+                checkInterval: Number(editFormData.checkInterval)
             });
 
             setEditingId(null);
@@ -338,6 +344,29 @@ function Monitors() {
                             />
                         </div>
 
+                        
+
+
+                        <div>
+                            <label className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+                                Check interval
+                            </label>
+
+                            <select
+                                name="checkInterval"
+                                value={formData.checkInterval}
+                                onChange={handleChange}
+                                className="h-10 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs text-zinc-200 outline-none focus:border-emerald-400/30"
+                            >
+                                <option value={30}>30 seconds</option>
+                                <option value={60}>1 minute</option>
+                                <option value={300}>5 minutes</option>
+                                <option value={600}>10 minutes</option>
+                                <option value={1800}>30 minutes</option>
+                                <option value={3600}>1 hour</option>
+                            </select>
+                    </div>
+
                         <div className="flex justify-end sm:col-span-2">
                             <button
                                 type="submit"
@@ -428,6 +457,26 @@ function Monitors() {
                                                     className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs text-zinc-200 outline-none focus:border-emerald-400/30"
                                                 />
                                             </div>
+
+                                            <div>
+                                        <label className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
+                                            Check interval
+                                        </label>
+
+                                        <select
+                                            name="checkInterval"
+                                            value={editFormData.checkInterval}
+                                            onChange={handleEditChange}
+                                            className="h-9 w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 text-xs text-zinc-200 outline-none focus:border-emerald-400/30"
+                                        >
+                                            <option value={30}>30 seconds</option>
+                                            <option value={60}>1 minute</option>
+                                            <option value={300}>5 minutes</option>
+                                            <option value={600}>10 minutes</option>
+                                            <option value={1800}>30 minutes</option>
+                                            <option value={3600}>1 hour</option>
+                                        </select>
+                                    </div>
 
                                             <div>
                                                 <label className="mb-2 block text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-600">
